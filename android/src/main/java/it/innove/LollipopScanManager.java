@@ -40,11 +40,11 @@ public class LollipopScanManager extends ScanManager {
         ScanSettings.Builder scanSettingsBuilder = new ScanSettings.Builder();
         List<ScanFilter> filters = new ArrayList<>();
         
-        scanSettingsBuilder.setScanMode(options.getInt("scanMode"));
+        scanSettingsBuilder.setScanMode(1);
         
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
-            scanSettingsBuilder.setNumOfMatches(options.getInt("numberOfMatches"));
-            scanSettingsBuilder.setMatchMode(options.getInt("matchMode"));
+            scanSettingsBuilder.setNumOfMatches(1);
+            scanSettingsBuilder.setMatchMode(1);
         }
         
         if (serviceUUIDs.size() > 0) {

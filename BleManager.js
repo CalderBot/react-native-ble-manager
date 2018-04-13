@@ -173,22 +173,10 @@ class BleManager  {
       if (allowDuplicates == null) {
         allowDuplicates = false;
       }
-
-      // (ANDROID) Match as many advertisement per filter as hw could allow
-      // dependes on current capability and availability of the resources in hw.
-      if (scanningOptions.numberOfMatches == null) {
-          scanningOptions.numberOfMatches = 3
-      }
-
-      //(ANDROID) Defaults to MATCH_MODE_AGGRESSIVE
-      if (scanningOptions.matchMode == null) {
-          scanningOptions.matchMode = 1
-      }
-
-      //(ANDROID) Defaults to SCAN_MODE_LOW_POWER on android
-      if (scanningOptions.scanMode == null) {
-          scanningOptions.scanMode = 0;
-      }
+      // see https://developer.android.com/reference/android/bluetooth/le/ScanSettings.html
+          scanningOptions.numberOfMatches = 1;
+          scanningOptions.matchMode = 1;
+          scanningOptions.scanMode = 1;
 
       bleManager.scan(serviceUUIDs, seconds, allowDuplicates, scanningOptions, (error) => {
         if (error) {

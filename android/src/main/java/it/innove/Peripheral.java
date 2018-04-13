@@ -83,7 +83,9 @@ public class Peripheral extends BluetoothGattCallback {
 		if (!connected) {
 			BluetoothDevice device = getDevice();
 			this.connectCallback = callback;
-			gatt = device.connectGatt(activity, true, this);
+			gatt = device.connectGatt(activity, true, this, BluetoothDevice.TRANSPORT_LE);
+			// tried this but it didn't seemto have an effect
+//			gatt.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH);
 		} else {
 			if (gatt != null) {
 				callback.invoke();
