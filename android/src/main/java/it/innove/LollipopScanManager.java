@@ -40,11 +40,11 @@ public class LollipopScanManager extends ScanManager {
         ScanSettings.Builder scanSettingsBuilder = new ScanSettings.Builder();
         List<ScanFilter> filters = new ArrayList<>();
         
-        scanSettingsBuilder.setScanMode(1);
+        scanSettingsBuilder.setScanMode(options.getInt("scanMode"));
         
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
-            scanSettingsBuilder.setNumOfMatches(1);
-            scanSettingsBuilder.setMatchMode(1);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            scanSettingsBuilder.setNumOfMatches(options.getInt("numberOfMatches"));
+            scanSettingsBuilder.setMatchMode(options.getInt("matchMode"));
         }
         
         if (serviceUUIDs.size() > 0) {
@@ -103,12 +103,12 @@ public class LollipopScanManager extends ScanManager {
                     Peripheral peripheral = null;
 
 					if (!bleManager.peripherals.containsKey(address)) {
-						peripheral = new Peripheral(result.getDevice(), result.getRssi(), result.getScanRecord().getBytes(), reactContext);
+						peripheral = new Peripheral(result.getDevice(), result.getRssi(), result.getScanRecord(), reactContext);
 						bleManager.peripherals.put(address, peripheral);
 					} else {
 						peripheral = bleManager.peripherals.get(address);
 						peripheral.updateRssi(result.getRssi());
-						peripheral.updateData(result.getScanRecord().getBytes());
+						peripheral.updateData(result.getScanRecord());
 					}
 
 					WritableMap map = peripheral.asWritableMap();

@@ -253,7 +253,7 @@ __Examples__
 BleManager.enableBluetooth()
   .then(() => {
     // Success code
-    console.log('The bluetooh is already enabled or the user confirm');
+    console.log('The bluetooth is already enabled or the user confirm');
   })
   .catch((error) => {
     // Failure code
@@ -414,6 +414,29 @@ BleManager.readRSSI('XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX')
   });
 ```
 
+### requestConnectionPriority(peripheralId, connectionPriority) [Android only API 21+]
+Request a connection parameter update.
+Returns a `Promise` object.
+
+__Arguments__
+- `peripheralId` - `String` - the id/mac address of the peripheral.
+- `connectionPriority` - `Integer` - the connection priority to be requested, as follows:
+    - 0 - balanced priority connection
+    - 1 - high priority connection
+    - 2 - low power priority connection
+
+__Examples__
+```js
+BleManager.requestConnectionPriority('XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX', 1)
+.then((status) => {
+  // Success code
+  console.log('Requested connection priority');
+})
+.catch((error) => {
+  // Failure code
+  console.log(error);
+});
+```
 
 ### requestMTU(peripheralId, mtu) [Android only API 21+]
 Request an MTU size used for a given connection.
@@ -426,9 +449,9 @@ __Arguments__
 __Examples__
 ```js
 BleManager.requestMTU('XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX', 512)
-.then(() => {
+.then((mtu) => {
   // Success code
-  console.log('MTU size changed');
+  console.log('MTU size changed to ' + mtu + ' bytes');
 })
 .catch((error) => {
   // Failure code
@@ -451,6 +474,26 @@ BleManager.retrieveServices('XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX')
     console.log('Peripheral info:', peripheralInfo);
   });  
 ```
+
+### refreshCache(peripheralId) [Android only]
+refreshes the peripheral's services and characteristics cache
+Returns a `Promise` object.
+
+__Arguments__
+- `peripheralId` - `String` - the id/mac address of the peripheral.
+
+__Examples__
+```js
+BleManager.refreshCache('XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX')
+  .then((peripheralInfo) => {
+    // Success code
+    console.log('cache refreshed!')
+  })
+  .cache((error) => {
+    console.error(error)
+  }); 
+```
+
 
 ### getConnectedPeripherals(serviceUUIDs)
 Return the connected peripherals.
@@ -484,6 +527,23 @@ BleManager.createBond(peripheralId)
   })
 
 ```
+
+### removeBond(peripheralId) [Android only]
+Remove a paired device.
+Returns a `Promise` object.
+
+__Examples__
+```js
+BleManager.removeBond(peripheralId)
+  .then(() => {
+    console.log('removeBond success');
+  })
+  .catch(() => {
+    console.log('fail to remove the bond');
+  })
+
+```
+
 
 ### getBondedPeripherals() [Android only]
 Return the bonded peripherals.
@@ -601,9 +661,36 @@ bleManagerEmitter.addListener(
 A characteristic notify a new value.
 
 __Arguments__
-- `peripheral` - `String` - the id of the peripheral
-- `characteristic` - `String` - the UUID of the characteristic
-- `value` - `Array` - the read value
+- `value` — `Array` — the read value
+- `peripheral` — `String` — the id of the peripheral
+- `characteristic` — `String` — the UUID of the characteristic
+- `service` — `String` — the UUID of the characteristic
+
+> Event will only be emitted after successful `startNotification`.
+
+__Example__
+```js
+import { bytesToString } from 'convert-string';
+
+async function connectAndPrepare(peripheral, service, characteristic) {
+  // Connect to device
+  await BleManager.connect(peripheral);
+  // Before startNotification you need to call retrieveServices
+  await BleManager.retrieveServices(peripheral);
+  // To enable BleManagerDidUpdateValueForCharacteristic listener
+  await BleManager.startNotification(peripheral, service, characteristic);
+  // Add event listener
+  bleManagerEmitter.addListener(
+    'BleManagerDidUpdateValueForCharacteristic',
+    ({ value, peripheral, characteristic, service }) => {
+        // Convert bytes array to string
+        const data = bytesToString(value);
+        console.log(`Recieved ${data} for characteristic ${characteristic}`);
+    }
+  );
+  // Actions triggereng BleManagerDidUpdateValueForCharacteristic event
+}
+```
 
 ###  BleManagerConnectPeripheral
 A peripheral was connected.
