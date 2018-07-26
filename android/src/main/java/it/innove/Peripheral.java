@@ -118,8 +118,9 @@ public class Peripheral extends BluetoothGattCallback {
 							this);
 				}
 			}
-			onConnectionStateChange(gatt, 0,BluetoothGatt.STATE_CONNECTED);
-
+//			calder
+	//		onConnectionStateChange(gatt, 0,BluetoothGatt.STATE_CONNECTED);
+			Log.d(BleManager.LOG_TAG, "CALDERBOT SKIPPING ON CONNECTION STATE CHANGE");
 			} else {
 			if (gatt != null) {
 				callback.invoke();
