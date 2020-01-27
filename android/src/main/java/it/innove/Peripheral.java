@@ -689,10 +689,12 @@ public class Peripheral extends BluetoothGattCallback {
 				}
 
 				if (writeCallback != null) {
-					callback.invoke("You're already writing");
+					writeCallback = null;
+					writeQueue.clear();
+					callback.invoke("You're already writing.  Clearing queue and nulling callback.");
 				}
 
-				if (writeQueue.size() == 0 && writeCallback == null) {
+				else if (writeQueue.size() == 0 && writeCallback == null) {
 
 					if (BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT == writeType) {
 						writeCallback = callback;
