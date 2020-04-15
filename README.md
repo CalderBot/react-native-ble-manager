@@ -6,8 +6,9 @@
 This is a porting of https://github.com/don/cordova-plugin-ble-central project to React Native.
 
 ## Requirements
-RN 0.40+
+RN 0.60+
 
+RN 0.40-0.59 supported until 6.7.X
 RN 0.30-0.39 supported until 2.4.3
 
 ## Supported Platforms
@@ -18,76 +19,10 @@ RN 0.30-0.39 supported until 2.4.3
 ```shell
 npm i --save react-native-ble-manager
 ```
-After installing, you need to link the native library. You can either:
-* Link native library with `react-native link`, or
-* Link native library manually
+The library support the autolink feature.
 
-Both approaches are described below.
 
-### Link Native Library with `react-native link`
-
-```shell
-react-native link react-native-ble-manager
-```
-
-After this step:
- * iOS should be linked properly.
- * Android will need one more step, you need to edit `android/app/build.gradle`:
-```gradle
-// file: android/app/build.gradle
-...
-
-android {
-    ...
-
-    defaultConfig {
-        ...
-        minSdkVersion 19 // <--- make sure this is 19 or greater
-        ...
-    }
-    ...
-}
-```
-
-### Link Native Library Manually
-
-#### iOS
-- Open the node_modules/react-native-ble-manager/ios folder and drag BleManager.xcodeproj into your Libraries group.
-- Check the "Build Phases"of your project and add "libBleManager.a" in the "Link Binary With Libraries" section.
-
-#### Android
-##### Update Gradle Settings
-
-```gradle
-// file: android/settings.gradle
-...
-
-include ':react-native-ble-manager'
-project(':react-native-ble-manager').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-ble-manager/android')
-```
-##### Update Gradle Build
-
-```gradle
-// file: android/app/build.gradle
-...
-
-android {
-    ...
-
-    defaultConfig {
-        ...
-        minSdkVersion 19 // <--- make sure this is 19 or greater
-        ...
-    }
-    ...
-}
-
-dependencies {
-    ...
-    compile project(':react-native-ble-manager')
-}
-```
-##### Update Android Manifest
+##### Android - Update Manifest
 
 ```xml
 // file: android/app/src/main/AndroidManifest.xml
@@ -98,26 +33,9 @@ dependencies {
 ...
 ```
 
-##### Register React Package
-```java
-...
-import it.innove.BleManagerPackage; // <--- import
+##### iOS - Update Info.plist
+In iOS >= 13 you need to add the `NSBluetoothAlwaysUsageDescription` string key.
 
-public class MainApplication extends Application implements ReactApplication {
-
-    ...
-
-    @Override
-    protected List<ReactPackage> getPackages() {
-        return Arrays.<ReactPackage>asList(
-            new MainReactPackage(),
-            new BleManagerPackage() // <------ add the package
-        );
-    }
-
-    ...
-}
-```
 ## Note
 - Remember to use the `start` method before anything.
 - If you have problem with old devices try avoid to connect/read/write to a peripheral during scan.
@@ -152,6 +70,7 @@ __Arguments__
 The parameter is optional the configuration keys are:
 - `showAlert` - `Boolean` - [iOS only] Show or hide the alert if the bluetooth is turned off during initialization
 - `restoreIdentifierKey` - `String` - [iOS only] Unique key to use for CoreBluetooth state restoration
+- `queueIdentifierKey` - `String` - [iOS only] Unique key to use for a queue identifier on which CoreBluetooth events will be dispatched
 - `forceLegacy` - `Boolean` - [Android only] Force to use the LegacyScanManager
 
 __Examples__
@@ -176,6 +95,7 @@ __Arguments__
   - `numberOfMatches` - `Number` - corresponding to [`setNumOfMatches`](https://developer.android.com/reference/android/bluetooth/le/ScanSettings.Builder.html#setNumOfMatches(int))
   - `matchMode` - `Number` - corresponding to [`setMatchMode`](https://developer.android.com/reference/android/bluetooth/le/ScanSettings.Builder.html#setMatchMode(int))
   - `scanMode` - `Number` - corresponding to [`setScanMode`](https://developer.android.com/reference/android/bluetooth/le/ScanSettings.Builder.html#setScanMode(int))
+  - `reportDelay` - `Number` - corresponding to [`setReportDelay`](https://developer.android.com/reference/android/bluetooth/le/ScanSettings.Builder.html#setReportDelay(long))
 
 
 __Examples__
@@ -224,12 +144,19 @@ BleManager.connect('XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX')
   });
 ```
 
-### disconnect(peripheralId)
+### disconnect(peripheralId, force)
 Disconnect from a peripheral.
 Returns a `Promise` object.
 
 __Arguments__
 - `peripheralId` - `String` - the id/mac address of the peripheral to disconnect.
+- `force` - `boolean` - [Android only] defaults to true, if true force closes gatt
+                        connection and send the BleManagerDisconnectPeripheral
+                        event immediately to Javascript, else disconnects the
+                        connection and waits for [`disconnected state`](https://developer.android.com/reference/android/bluetooth/BluetoothProfile#STATE_DISCONNECTED) to
+                        [`close the gatt connection`](https://developer.android.com/reference/android/bluetooth/BluetoothGatt#close())
+                        and then sends the BleManagerDisconnectPeripheral to the
+                        Javascript
 
 __Examples__
 ```js
@@ -459,12 +386,13 @@ BleManager.requestMTU('XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX', 512)
 });
 ```
 
-### retrieveServices(peripheralId)
+### retrieveServices(peripheralId[, serviceUUIDs])
 Retrieve the peripheral's services and characteristics.
 Returns a `Promise` object.
 
 __Arguments__
 - `peripheralId` - `String` - the id/mac address of the peripheral.
+- `serviceUUIDs` - `String[]` - [iOS only] only retrieve these services.
 
 __Examples__
 ```js
@@ -472,7 +400,7 @@ BleManager.retrieveServices('XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX')
   .then((peripheralInfo) => {
     // Success code
     console.log('Peripheral info:', peripheralInfo);
-  });  
+  });
 ```
 
 ### refreshCache(peripheralId) [Android only]
@@ -489,9 +417,9 @@ BleManager.refreshCache('XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX')
     // Success code
     console.log('cache refreshed!')
   })
-  .cache((error) => {
+  .catch((error) => {
     console.error(error)
-  }); 
+  });
 ```
 
 
@@ -638,13 +566,12 @@ __Arguments__
 - `id` - `String` - the id of the peripheral
 - `name` - `String` - the name of the peripheral
 - `rssi` - ` Number` - the RSSI value
-- `advertising` - `JSON` - the advertising payload, according to platforms:
-    - [Android] contains the raw `bytes` and  `data` (Base64 encoded string)
-    - [iOS] contains a JSON object with different keys according to [Apple's doc](https://developer.apple.com/documentation/corebluetooth/cbcentralmanagerdelegate/advertisement_data_retrieval_keys?language=objc), here are some examples:
-      - `kCBAdvDataChannel` - `Number`
-      - `kCBAdvDataIsConnectable` - `Number`
-      - `kCBAdvDataLocalName` - `String`
-      - `kCBAdvDataManufacturerData` - `JSON` - contains the raw `bytes` and  `data` (Base64 encoded string)
+- `advertising` - `JSON` - the advertising payload, here are some examples:
+    - `isConnectable` - `Boolean`
+    - `serviceUUIDs` - `Array of String`
+    - `manufacturerData` - `JSON` - contains the raw `bytes` and  `data` (Base64 encoded string)
+    - `serviceData` - `JSON` - contains the raw `bytes` and  `data` (Base64 encoded string)
+    - `txPowerLevel` - `Int`
 
 __Examples__
 ```js
@@ -671,6 +598,10 @@ __Arguments__
 __Example__
 ```js
 import { bytesToString } from 'convert-string';
+import { NativeModules, NativeEventEmitter } from 'react-native';
+
+const BleManagerModule = NativeModules.BleManager;
+const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
 
 async function connectAndPrepare(peripheral, service, characteristic) {
   // Connect to device
@@ -697,9 +628,23 @@ A peripheral was connected.
 
 __Arguments__
 - `peripheral` - `String` - the id of the peripheral
+- `status` - `Number` -  [Android only] connect [`reasons`](https://developer.android.com/reference/android/bluetooth/BluetoothGattCallback.html#onConnectionStateChange(android.bluetooth.BluetoothGatt,%20int,%20int))
 
 ###  BleManagerDisconnectPeripheral
 A peripheral was disconnected.
 
 __Arguments__
 - `peripheral` - `String` - the id of the peripheral
+- `status` - `Number` -  [Android only] disconnect [`reasons`](https://developer.android.com/reference/android/bluetooth/BluetoothGattCallback.html#onConnectionStateChange(android.bluetooth.BluetoothGatt,%20int,%20int))
+
+### BleManagerCentralManagerWillRestoreState [iOS only]
+This is fired when [`centralManager:WillRestoreState:`](https://developer.apple.com/documentation/corebluetooth/cbcentralmanagerdelegate/1518819-centralmanager) is called (app relaunched in the background to handle a bluetooth event).
+
+__Arguments__
+- `peripherals` - `Array` - an array of previously connected peripherals.
+
+*For more on performing long-term bluetooth actions in the background:*
+
+[iOS Bluetooth State Preservation and Restoration](https://developer.apple.com/library/archive/documentation/NetworkingInternetWeb/Conceptual/CoreBluetooth_concepts/CoreBluetoothBackgroundProcessingForIOSApps/PerformingTasksWhileYourAppIsInTheBackground.html#//apple_ref/doc/uid/TP40013257-CH7-SW10)
+
+[iOS Relaunch Conditions](https://developer.apple.com/library/archive/qa/qa1962/_index.html)

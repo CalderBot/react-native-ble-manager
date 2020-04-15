@@ -44,9 +44,9 @@ class BleManager  {
     });
   }
 
-  retrieveServices(peripheralId) {
+  retrieveServices(peripheralId, services) {
     return new Promise((fulfill, reject) => {
-      bleManager.retrieveServices(peripheralId, (error, peripheral) => {
+      bleManager.retrieveServices(peripheralId, services, (error, peripheral) => {
         if (error) {
           reject(error);
         } else {
@@ -125,9 +125,9 @@ class BleManager  {
     });
   }
 
-  disconnect(peripheralId) {
+  disconnect(peripheralId, force=true) {
     return new Promise((fulfill, reject) => {
-      bleManager.disconnect(peripheralId, (error) => {
+      bleManager.disconnect(peripheralId, force, (error) => {
         if (error) {
           reject(error);
         } else {
@@ -200,6 +200,10 @@ class BleManager  {
       // (ANDROID) Defaults to SCAN_MODE_LOW_POWER on android
       if (scanningOptions.scanMode == null) {
         scanningOptions.scanMode = 1;
+      }
+
+      if (scanningOptions.reportDelay == null) {
+        scanningOptions.reportDelay = 0;
       }
 
       bleManager.scan(serviceUUIDs, seconds, allowDuplicates, scanningOptions, (error) => {
